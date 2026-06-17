@@ -1,0 +1,13 @@
+flask
+flask-socketio
+flask-cors
+transformers
+# CPU-only PyTorch index URL (useful for Linux/Windows)
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+detoxify
+vaderSentiment
+# Note: sqlite3 is part of the Python standard library, so it is not listed as a pip package
+gunicorn
+gevent
+gevent-websocket

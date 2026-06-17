@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moderation Dashboard</title>
+    <style>
+        body.dark-mode {
+            background: #121212;
+            color: #ffffff;
+        }
+        body.dark-mode h1 { color: #ffffff; }
+        body.dark-mode p { color: #aaaaaa; }
+        body.dark-mode .card {
+            background: #1e1e1e;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+            color: #ffffff;
+        }
+        body.dark-mode .username { color: #ffffff; }
+        body.dark-mode .message-text { color: #dddddd; border-left-color: #444; }
+        body.dark-mode .score-header { color: #aaaaaa; }
+        body.dark-mode .progress-bar-bg { background: #333333; }
+        body.dark-mode #empty-state {
+            background: #1e1e1e;
+            color: #aaaaaa;
+            border-color: #444;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Tiempos', 'Tiempos Text', Georgia, serif;
+            background: #f4f5f7;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+        }
+        #sidebar {
+            width: 250px;
+            background: #1e1e2d;
+            color: #fff;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+        }
+        #sidebar h2 {
+            margin-top: 0;
+            font-size: 1.2rem;
+            letter-spacing: 0.5px;
+            color: #a2a5b9;
+            text-transform: uppercase;
+        }
+        .nav-item {
+            padding: 12px 0;
+            color: #fff;
+            text-decoration: none;
+            opacity: 0.7;
+            font-weight: 500;
+            transition: opacity 0.2s;
+        }
+        .nav-item:hover {
+            opacity: 1;
+        }
+        .nav-item.active {
+            opacity: 1;
+            color: #4da3ff;
+        }
+        #main-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+        h1 {
+            margin-top: 0;
+            color: #333;
+        }
+        p {
+            color: #666;
+        }
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+            margin-top: 24px;
+        }
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .username {
+            font-weight: 600;
+            color: #111;
+        }
+        .reason-label {
+            background: #ffebee;
+            color: #c62828;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .message-text {
+            color: #444;
+            margin-bottom: 20px;
+            flex: 1;
+            word-break: break-word;
+            font-style: italic;
+            border-left: 3px solid #ddd;
+            padding-left: 12px;
+        }
+        .score-section {
+            margin-bottom: 20px;
+        }
+        .score-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+        .progress-bar-bg {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        /* colors for progress */
+        .fill-red { background: #f44336; }
+        .fill-yellow { background: #ff9800; }
+        
+        .actions {
+            display: flex;
+            gap: 12px;
+        }
+        .btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: opacity 0.2s, background 0.2s;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn-approve {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .btn-approve:hover { background: #c8e6c9; }
+        
+        .btn-remove {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .btn-remove:hover { background: #ffcdd2; }
+        
+        #empty-state {
+            color: #666;
+            font-style: italic;
+            margin-top: 24px;
+            background: #fff;
+            padding: 24px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px dashed #ccc;
+        }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <h2>Lowkey</h2>
+    <a href="#" class="nav-item">Dashboard</a>
+    <a href="#" class="nav-item active">Review Queue</a>
+    <a href="#" class="nav-item">Settings</a>
+</div>
+
+<div id="main-content">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1>Human Review Queue</h1>
+        <button id="theme-toggle" onclick="toggleTheme()" style="background:none;border:none;cursor:pointer;font-size:1.5rem;">🌙</button>
+    </div>
+    <p>Flagged messages waiting for moderator action. Auto-refreshes every 10 seconds.</p>
+    
+    <div id="empty-state" style="display: none;">No flagged messages in the queue.</div>
+    <div class="card-grid" id="queue-grid">
+        <!-- Cards will be injected here -->
+    </div>
+</div>
+
+<script>
+    // Theme logic
+    function toggleTheme() {
+        document.body.classList.toggle('dark-mode');
+        const btn = document.getElementById('theme-toggle');
+        const isDark = document.body.classList.contains('dark-mode');
+        btn.textContent = isDark ? '☀️' : '🌙';
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    }
+    
+    // Apply saved theme
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-mode');
+        document.getElementById('theme-toggle').textContent = '☀️';
+    }
+
+    const API_BASE = window.location.origin;
+
+    // Fetch on load
+    fetchFlagged();
+
+    // Fetch every 10 seconds
+    setInterval(fetchFlagged, 10000);
+
+    async function fetchFlagged() {
+        try {
+            const res = await fetch(`${API_BASE}/flagged`);
+            const data = await res.json();
+            renderQueue(data);
+        } catch (err) {
+            console.error("Error fetching flagged messages:", err);
+        }
+    }
+
+    async function handleAction(id, action) {
+        try {
+            const res = await fetch(`${API_BASE}/review/${id}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: action })
+            });
+            if (res.ok) {
+                // Instantly remove the card from UI to feel snappy
+                const card = document.getElementById(`card-${id}`);
+                if (card) {
+                    card.style.opacity = "0";
+                    setTimeout(() => card.remove(), 200);
+                }
+                
+                // Also trigger a fetch to make sure the state is fully in sync
+                setTimeout(fetchFlagged, 300);
+            } else {
+                alert("Failed to review message.");
+            }
+        } catch (err) {
+            console.error("Error reviewing message:", err);
+            alert("Error communicating with server.");
+        }
+    }
+
+    function renderQueue(messages) {
+        const grid = document.getElementById("queue-grid");
+        const emptyState = document.getElementById("empty-state");
+        
+        grid.innerHTML = ""; // clear current cards
+        
+        if (!messages || messages.length === 0) {
+            emptyState.style.display = "block";
+            return;
+        }
+        
+        emptyState.style.display = "none";
+        
+        messages.forEach(msg => {
+            const score = msg.toxicity_score || 0;
+            const pct = Math.round(score * 100);
+            const colorClass = score > 0.8 ? "fill-red" : "fill-yellow";
+            
+            const card = document.createElement("div");
+            card.className = "card";
+            card.id = `card-${msg.id}`;
+            card.style.transition = "opacity 0.2s";
+            
+            card.innerHTML = `
+                <div class="card-header">
+                    <span class="username">${msg.username || 'Unknown'}</span>
+                    <span class="reason-label">${(msg.primary_label || 'Flagged').split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</span>
+                </div>
+                <div class="message-text">"${msg.message}"</div>
+                
+                <div class="score-section">
+                    <div class="score-header">
+                        <span>Toxicity Score</span>
+                        <span>${pct}%</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill ${colorClass}" style="width: ${pct}%;"></div>
+                    </div>
+                </div>
+                
+                <div class="actions">
+                    <button class="btn btn-approve" onclick="handleAction(${msg.id}, 'approve')">Approve</button>
+                    <button class="btn btn-remove" onclick="handleAction(${msg.id}, 'remove')">Remove</button>
+                </div>
+            `;
+            
+            grid.appendChild(card);
+        });
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lowkey | Next-Gen AI Moderation</title>
+    <meta name="description" content="Lowkey — Sleek, real-time AI comment moderation platform.">
+
+    <script>
+        // Apply theme immediately to prevent flash
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            /* Core Theme Colors */
+            --bg-base: #000000;
+            --text-main: #ffffff;
+            --text-muted: #a1a1aa;
+            --text-dim: #71717a;
+            
+            /* Glassmorphism Variables */
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-highlight: rgba(255, 255, 255, 0.12);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+            --glass-blur: blur(24px);
+
+            --accent: #ffffff;
+            --accent-glow: rgba(255, 255, 255, 0.15);
+
+            --font-inter: 'Tiempos', 'Tiempos Text', Georgia, serif;
+            --font-outfit: 'Tiempos', 'Tiempos Text', Georgia, serif;
+
+            --transition-smooth: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        [data-theme="light"] {
+            --bg-base: #f4f4f5;
+            --text-main: #000000;
+            --text-muted: #52525b;
+            --text-dim: #a1a1aa;
+            
+            --glass-bg: rgba(255, 255, 255, 0.6);
+            --glass-border: rgba(0, 0, 0, 0.06);
+            --glass-highlight: rgba(0, 0, 0, 0.1);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+            --glass-blur: blur(30px);
+
+            --accent: #000000;
+            --accent-glow: rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-inter);
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+            transition: background-color var(--transition-smooth), color var(--transition-smooth);
+        }
+
+        /* Ambient Background Glow */
+        .ambient-glow {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80vw;
+            height: 80vw;
+            max-width: 1200px;
+            max-height: 1200px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 60%);
+            filter: blur(100px);
+            z-index: -1;
+            pointer-events: none;
+            border-radius: 50%;
+            animation: pulseGlow 10s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulseGlow {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+            100% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.8; }
+        }
+
+        /* Glass Utility Class */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: var(--glass-shadow);
+        }
+
+        /* Navbar */
+        nav {
+            position: fixed;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 1200px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            z-index: 100;
+            border-radius: 100px;
+            transition: all var(--transition-smooth);
+        }
+
+        .logo {
+            font-family: var(--font-outfit);
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-main);
+            text-decoration: none;
+        }
+
+        .logo i {
+            font-size: 1.1rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color var(--transition-smooth);
+        }
+
+        .nav-link:hover {
+            color: var(--text-main);
+        }
+
+        .theme-toggle {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0.5rem;
+            transition: color var(--transition-smooth);
+        }
+
+        .theme-toggle:hover {
+            color: var(--text-main);
+        }
+
+        /* Smooth cross-document view transitions */
+        @media (prefers-reduced-motion: no-preference) {
+            @view-transition {
+                navigation: auto;
+            }
+        }
+
+        .btn-primary {
+            background: var(--text-main);
+            color: var(--bg-base);
+            padding: 0.7rem 1.5rem;
+            border-radius: 100px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 6rem 2rem 2rem;
+            position: relative;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 100px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            letter-spacing: 0.5px;
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+        }
+
+        .hero-title {
+            font-family: var(--font-outfit);
+            font-size: clamp(3rem, 6vw, 5.5rem);
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -2px;
+            margin-bottom: 1.5rem;
+            max-width: 900px;
+            background: linear-gradient(180deg, var(--text-main) 0%, var(--text-muted) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(1.1rem, 2vw, 1.3rem);
+            color: var(--text-muted);
+            max-width: 600px;
+            margin-bottom: 2.5rem;
+            font-weight: 400;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 4rem;
+        }
+
+        .btn-secondary {
+            background: var(--glass-bg);
+            color: var(--text-main);
+            padding: 0.7rem 1.5rem;
+            border-radius: 100px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            text-decoration: none;
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+            transition: all var(--transition-smooth);
+        }
+
+        .btn-secondary:hover {
+            background: var(--glass-highlight);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Mockup Display */
+        .mockup-container {
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+            position: relative;
+            transform: perspective(1000px) rotateX(2deg);
+            transition: transform 0.5s ease-out;
+        }
+
+        .mockup-container:hover {
+            transform: perspective(1000px) rotateX(0deg);
+        }
+
+        .mockup-header {
+            height: 40px;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            padding: 0 1.5rem;
+            gap: 0.5rem;
+        }
+
+        .mockup-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--glass-border);
+        }
+
+        .mockup-body {
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .mockup-chat, .mockup-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .mockup-bubble {
+            padding: 1rem;
+            border-radius: 16px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            width: 80%;
+            position: relative;
+        }
+
+        .mockup-bubble.right {
+            align-self: flex-end;
+            background: var(--glass-highlight);
+        }
+
+        .mockup-line {
+            height: 8px;
+            background: var(--glass-border);
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+
+        .mockup-line.short { width: 60%; }
+        .mockup-line.long { width: 90%; }
+
+        .mockup-stat-card {
+            padding: 1.5rem;
+            border-radius: 16px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .mockup-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 4px solid var(--glass-highlight);
+            border-top-color: var(--text-main);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 8rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-title {
+            font-family: var(--font-outfit);
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .section-subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            padding: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            transition: transform var(--transition-smooth);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            background: var(--glass-highlight);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--text-main);
+            border: 1px solid var(--glass-border);
+        }
+
+        .feature-title {
+            font-family: var(--font-outfit);
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .feature-desc {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* Footer */
+        footer {
+            padding: 4rem 2rem;
+            text-align: center;
+            border-top: 1px solid var(--glass-border);
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .mockup-body {
+                grid-template-columns: 1fr;
+            }
+            .nav-links {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-glow"></div>
+
+    <nav class="glass-panel">
+        <a href="index.html" class="logo">
+            <i class="fa-solid fa-comment-dots"></i>
+            Lowkey
+        </a>
+        <div class="nav-links">
+            <a href="#features" class="nav-link">Features</a>
+            <a href="how-it-works.html" class="nav-link">How it Works</a>
+            <a href="#pricing" class="nav-link">Pricing</a>
+        </div>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle Theme">
+                <i class="fa-solid fa-sun"></i>
+            </button>
+            <a href="app.html" class="btn-primary">Go to App</a>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-badge">v2.0 is now live</div>
+        <h1 class="hero-title">Protect your community with silent precision.</h1>
+        <p class="hero-subtitle">Advanced machine learning moderation wrapped in a beautifully minimalist interface. Real-time scoring, zero latency.</p>
+        
+        <div class="hero-actions">
+            <a href="app.html" class="btn-primary">Start Moderating Free</a>
+            <a href="#features" class="btn-secondary">View Features</a>
+        </div>
+
+        <div class="mockup-container glass-panel">
+            <div class="mockup-header">
+                <div class="mockup-dot"></div>
+                <div class="mockup-dot"></div>
+                <div class="mockup-dot"></div>
+            </div>
+            <div class="mockup-body">
+                <div class="mockup-chat">
+                    <div class="mockup-bubble">
+                        <div class="mockup-line short"></div>
+                        <div class="mockup-line long"></div>
+                    </div>
+                    <div class="mockup-bubble right">
+                        <div class="mockup-line long"></div>
+                        <div class="mockup-line short"></div>
+                    </div>
+                    <div class="mockup-bubble" style="border-color: rgba(239, 68, 68, 0.3);">
+                        <div class="mockup-line long" style="background: rgba(239, 68, 68, 0.2);"></div>
+                        <div style="font-size: 0.7rem; color: #ef4444; margin-top: 10px;">98% Toxicity</div>
+                    </div>
+                </div>
+                <div class="mockup-stats">
+                    <div class="mockup-stat-card">
+                        <div>
+                            <div style="font-size: 1rem; font-weight: 600;  ">Flagged</div>
+                            <div style="font-size: 1.5rem; font-weight: bold;">12,402</div>
+                        </div>
+                        <div class="mockup-circle"></div>
+                    </div>
+                    <div class="mockup-stat-card">
+                        <div>
+                            <div style="font-size: 1rem; font-weight: 600;  ">Latency</div>
+                            <div style="font-size: 1.5rem; font-weight: bold;">0.8ms</div>
+
+                        </div>
+                        <i class="fa-solid fa-bolt" style="color: var(--text-muted); font-size: 1.5rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="features">
+        <div class="section-header">
+            <h2 class="section-title">Built for modern platforms</h2>
+            <p class="section-subtitle">Everything you need to keep your platform safe, without the bloat.</p>
+        </div>
+        <div class="feature-grid">
+            <div class="feature-card glass-panel">
+                <div class="feature-icon"><i class="fa-solid fa-microchip"></i></div>
+                <h3 class="feature-title">Transformer Models</h3>
+                <p class="feature-desc">Powered by state-of-the-art RoBERTa models that understand context, nuance, and intent better than keyword filters.</p>
+            </div>
+            <div class="feature-card glass-panel">
+                <div class="feature-icon"><i class="fa-solid fa-bolt-lightning"></i></div>
+                <h3 class="feature-title">Sub-millisecond Latency</h3>
+                <p class="feature-desc">Optimized inference engines ensure that messages are scored and filtered before they ever reach a user's screen.</p>
+            </div>
+            <div class="feature-card glass-panel">
+                <div class="feature-icon"><i class="fa-solid fa-chart-pie"></i></div>
+                <h3 class="feature-title">Live Analytics</h3>
+                <p class="feature-desc">Watch your community's health in real-time. Beautiful charts break down toxicity trends and flagged categories instantly.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 Lowkey AI Moderation. Designed with precision.</p>
+    </footer>
+
+    <script>
+        // Theme Toggle Logic
+        const themeToggleBtn = document.getElementById('themeToggle');
+        const htmlEl = document.documentElement;
+
+        // Initialize icon based on current theme
+        const currentSavedTheme = localStorage.getItem('theme') || 'dark';
+        themeToggleBtn.innerHTML = currentSavedTheme === 'dark' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+        
+        themeToggleBtn.addEventListener('click', () => {
+            const currentTheme = htmlEl.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            htmlEl.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            
+            // Update icon
+            themeToggleBtn.innerHTML = newTheme === 'dark' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+        });
+
+        // Parallax effect on mockup
+        document.addEventListener('mousemove', (e) => {
+            const mockup = document.querySelector('.mockup-container');
+            if(!mockup) return;
+            
+            const xAxis = (window.innerWidth / 2 - e.pageX) / 100;
+            const yAxis = (window.innerHeight / 2 - e.pageY) / 100;
+            
+            mockup.style.transform = `perspective(1000px) rotateY(${xAxis}deg) rotateX(${yAxis + 2}deg)`;
+        });
+        
+        // Reset on mouse leave
+        document.addEventListener('mouseleave', () => {
+            const mockup = document.querySelector('.mockup-container');
+            if(mockup) {
+                mockup.style.transform = 'perspective(1000px) rotateX(2deg)';
+            }
+        });
+    </script>
+</body>
+</html>

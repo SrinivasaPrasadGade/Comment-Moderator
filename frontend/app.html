@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lowkey | AI Comment Moderator</title>
+    <meta name="description" content="Lowkey — a sleek, real-time AI comment moderation platform with live toxicity scoring, analytics, and a moderator dashboard.">
+
+    <script>
+        // Apply theme immediately to prevent flash
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* ====================================================
+           DESIGN SYSTEM — Monochrome Black & White
+           Inspired by Poe / Dribbble aesthetic
+        ==================================================== */
+        :root {
+            --white-rgb: 255, 255, 255;
+            --black-rgb: 0, 0, 0;
+            --bg-primary: #09090b;
+            --bg-secondary: #111113;
+            --bg-card: rgba(20, 20, 22, 0.65);
+            --bg-card-solid: #141416;
+            --bg-elevated: rgba(28, 28, 32, 0.6);
+            --bg-input: rgba(var(--white-rgb), 0.03);
+            --bg-hover: rgba(var(--white-rgb), 0.04);
+
+            --border-subtle: rgba(var(--white-rgb), 0.06);
+            --border-medium: rgba(var(--white-rgb), 0.1);
+            --border-hover: rgba(var(--white-rgb), 0.16);
+            --border-active: rgba(var(--white-rgb), 0.25);
+
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-muted: #52525b;
+            --text-dim: #3f3f46;
+
+            --white: #ffffff;
+            --black: #000000;
+
+            /* Functional — kept intentionally muted */
+            --fn-green: #22c55e;
+            --fn-green-muted: rgba(34, 197, 94, 0.12);
+            --fn-red: #ef4444;
+            --fn-red-muted: rgba(239, 68, 68, 0.12);
+            --fn-amber: #f59e0b;
+            --fn-amber-muted: rgba(245, 158, 11, 0.12);
+
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --radius-pill: 100px;
+
+            --font-outfit: 'Tiempos', 'Tiempos Text', Georgia, serif;
+            --font-inter: 'Tiempos', 'Tiempos Text', Georgia, serif;
+
+            --shadow-sm: 0 1px 2px rgba(var(--black-rgb),0.3);
+            --shadow-md: 0 4px 16px rgba(var(--black-rgb),0.4);
+            --shadow-lg: 0 8px 32px rgba(var(--black-rgb),0.5);
+            --shadow-glow: 0 0 40px rgba(var(--white-rgb),0.03);
+
+            --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-smooth: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Light Theme Overrides */
+        [data-theme="light"] {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #f1f5f9;
+            --bg-card: rgba(var(--black-rgb), 0.85);
+            --bg-card-solid: #ffffff;
+            --bg-elevated: rgba(var(--black-rgb), 0.95);
+            --bg-input: rgba(var(--white-rgb), 0.03);
+            --bg-hover: rgba(var(--white-rgb), 0.05);
+
+            --border-subtle: rgba(var(--white-rgb), 0.08);
+            --border-medium: rgba(var(--white-rgb), 0.15);
+            --border-hover: rgba(var(--white-rgb), 0.25);
+            --border-active: rgba(var(--white-rgb), 0.35);
+
+            --text-primary: #0f172a;
+            --text-secondary: #334155;
+            --text-muted: #64748b;
+            --text-dim: #94a3b8;
+
+            --white: #000000;
+            --black: #ffffff;
+            --white-rgb: 0, 0, 0;
+            --black-rgb: 255, 255, 255;
+
+            --shadow-sm: 0 1px 2px rgba(var(--white-rgb),0.05);
+            --shadow-md: 0 4px 16px rgba(var(--white-rgb),0.08);
+            --shadow-lg: 0 8px 32px rgba(var(--white-rgb),0.12);
+            --shadow-glow: 0 0 40px rgba(var(--white-rgb),0.03);
+        }
+
+        /* ====== Reset & Base ====== */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: 15px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: var(--font-inter);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.5;
+        }
+
+        /* Subtle noise texture overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 30% 0%, rgba(var(--white-rgb),0.015) 0%, transparent 60%),
+                        radial-gradient(ellipse at 80% 100%, rgba(var(--white-rgb),0.01) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(var(--white-rgb),0.08); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(var(--white-rgb),0.15); }
+        * { scrollbar-width: thin; scrollbar-color: rgba(var(--white-rgb),0.08) transparent; }
+
+        /* ====== Top Navigation Bar ====== */
+        .topnav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 200;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2.5rem;
+            background: var(--bg-card);
+            backdrop-filter: blur(24px) saturate(1.2);
+            -webkit-backdrop-filter: blur(24px) saturate(1.2);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .topnav-left {
+            display: flex;
+            align-items: center;
+            gap: 2.5rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            text-decoration: none;
+        }
+
+        .logo-mark {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            background: var(--white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--black);
+            font-size: 0.85rem;
+            font-weight: 700;
+            box-shadow: 0 0 12px rgba(var(--white-rgb),0.1);
+        }
+
+        .logo-name {
+            font-family: var(--font-outfit);
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--white);
+            letter-spacing: -0.5px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            list-style: none;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-pill);
+            color: var(--text-secondary);
+            font-size: 0.87rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            border: 1px solid transparent;
+            user-select: none;
+        }
+
+        .nav-item:hover {
+            color: var(--text-primary);
+            background: var(--bg-hover);
+        }
+
+        .nav-item.active {
+            color: var(--white);
+            background: rgba(var(--white-rgb), 0.08);
+            border-color: var(--border-medium);
+        }
+
+        .nav-item i {
+            font-size: 0.85rem;
+            opacity: 0.7;
+        }
+
+        .nav-item.active i {
+            opacity: 1;
+        }
+
+        /* Status pill in nav */
+        .topnav-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0.85rem;
+            border-radius: var(--radius-pill);
+            border: 1px solid var(--border-subtle);
+            background: var(--bg-card);
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            backdrop-filter: blur(10px);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--fn-red);
+            transition: all var(--transition-base);
+        }
+
+        .status-dot.online {
+            background: var(--fn-green);
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+            animation: pulse-soft 2.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse-soft {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* ====== Main Layout ====== */
+        .main-wrapper {
+            padding-top: 64px;
+            min-height: 100vh;
+            position: relative;
+            z-index: 1;
+        }
+
+        .main-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 2rem 2.5rem 3rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.75rem;
+        }
+
+        /* View switching */
+        .view-section {
+            display: none;
+            animation: viewEnter 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .view-section.active {
+            display: flex;
+            flex-direction: column;
+            gap: 1.75rem;
+        }
+
+        @keyframes viewEnter {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ====== Section Headers ====== */
+        .view-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .view-title h1 {
+            font-family: var(--font-outfit);
+            font-weight: 700;
+            font-size: 1.65rem;
+            letter-spacing: -0.5px;
+            color: var(--white);
+            margin-bottom: 0.2rem;
+        }
+
+        .view-title p {
+            color: var(--text-muted);
+            font-size: 0.87rem;
+            font-weight: 400;
+        }
+
+        /* ====== Glass Card Mixin ====== */
+        .glass-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-xl);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: var(--shadow-md);
+            transition: border-color var(--transition-base);
+        }
+
+        .glass-card:hover {
+            border-color: var(--border-medium);
+        }
+
+        /* ====== LIVE CHAT SECTION ====== */
+        .chat-layout {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 1.25rem;
+            height: calc(100vh - 190px);
+            min-height: 480px;
+        }
+
+        /* Chat Panel */
+        .chat-panel {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-topbar {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .chat-topbar-left .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--fn-green);
+        }
+
+        .chat-topbar-left span {
+            font-family: var(--font-outfit);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .chat-topbar-right {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        /* Messages Area */
+        .chat-messages {
+            flex-grow: 1;
+            padding: 1.25rem 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        .message-bubble {
+            display: flex;
+            flex-direction: column;
+            max-width: 75%;
+            align-self: flex-start;
+            padding: 0.85rem 1.1rem;
+            border-radius: 14px 14px 14px 4px;
+            background: rgba(var(--white-rgb), 0.03);
+            border: 1px solid var(--border-subtle);
+            position: relative;
+            animation: msgSlide 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            transition: all var(--transition-fast);
+        }
+
+        .message-bubble:hover {
+            background: rgba(var(--white-rgb), 0.05);
+            border-color: var(--border-medium);
+        }
+
+        @keyframes msgSlide {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.25rem;
+            gap: 1rem;
+        }
+
+        .message-author {
+            font-family: var(--font-outfit);
+            font-weight: 600;
+            font-size: 0.82rem;
+            color: var(--white);
+        }
+
+        .message-time {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+        }
+
+        .message-body {
+            font-size: 0.87rem;
+            color: var(--text-secondary);
+            line-height: 1.45;
+        }
+
+        .message-score {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.65rem;
+            margin-top: 0.45rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: var(--radius-sm);
+            background: rgba(var(--white-rgb), 0.03);
+            color: var(--text-muted);
+            align-self: flex-start;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .message-score.safe {
+            border-color: rgba(34, 197, 94, 0.15);
+            color: var(--fn-green);
+        }
+
+        /* Input Area */
+        .chat-input-area {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border-subtle);
+            background: var(--bg-hover);
+        }
+
+        .chat-input-form {
+            display: flex;
+            gap: 0.6rem;
+            align-items: center;
+        }
+
+        .chat-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            flex-grow: 1;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 0.6rem;
+        }
+
+        .chat-input-field {
+            background: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 0.7rem 0.9rem;
+            color: var(--text-primary);
+            font-size: 0.87rem;
+            font-family: var(--font-inter);
+            outline: none;
+            transition: all var(--transition-base);
+        }
+
+        .chat-input-field::placeholder {
+            color: var(--text-dim);
+        }
+
+        .chat-input-field:focus {
+            border-color: var(--border-active);
+            background: rgba(var(--white-rgb), 0.05);
+            box-shadow: 0 0 0 3px rgba(var(--white-rgb), 0.04);
+        }
+
+        .author-input { width: 140px; }
+        .message-input { flex-grow: 1; }
+
+        .chat-send-btn {
+            background: var(--white);
+            color: var(--black);
+            border: none;
+            border-radius: var(--radius-md);
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            flex-shrink: 0;
+        }
+
+        .chat-send-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(var(--white-rgb), 0.15);
+        }
+
+        .chat-send-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Sidebar Info Panel */
+        .chat-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .info-card {
+            padding: 1.15rem;
+        }
+
+        .info-card h3 {
+            font-family: var(--font-outfit);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.65rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+        }
+
+        .info-card h3 i {
+            font-size: 0.8rem;
+            opacity: 0.5;
+        }
+
+        .rules-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+
+        .rules-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.45rem;
+        }
+
+        .rules-list li i {
+            color: var(--text-dim);
+            margin-top: 2px;
+            font-size: 0.55rem;
+        }
+
+        /* ====== MODERATOR DASHBOARD ====== */
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .stat-card {
+            padding: 1.25rem 1.35rem;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            transition: all var(--transition-smooth);
+        }
+
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, rgba(var(--white-rgb),0.2), rgba(var(--white-rgb),0));
+            opacity: 0;
+            transition: opacity var(--transition-base);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--border-hover);
+        }
+
+        .stat-card:hover::after {
+            opacity: 1;
+        }
+
+        .stat-title {
+            font-size: 0.72rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .stat-value {
+            font-family: var(--font-outfit);
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--white);
+            line-height: 1;
+        }
+
+        .stat-trend {
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            margin-top: 0.5rem;
+            color: var(--text-muted);
+        }
+
+        .trend-up { color: var(--fn-green); }
+        .trend-down { color: var(--fn-red); }
+
+        /* Dashboard Mid Section */
+        .dashboard-mid {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 1.25rem;
+        }
+
+        /* Queue Card */
+        .queue-card {
+            padding: 1.35rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.15rem;
+        }
+
+        .queue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .queue-header h2 {
+            font-family: var(--font-outfit);
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .queue-tabs {
+            display: flex;
+            gap: 0.25rem;
+            background: rgba(var(--white-rgb), 0.02);
+            border: 1px solid var(--border-subtle);
+            padding: 0.2rem;
+            border-radius: var(--radius-md);
+        }
+
+        .queue-tab {
+            padding: 0.4rem 0.85rem;
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            border: none;
+            background: transparent;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            font-family: var(--font-inter);
+        }
+
+        .queue-tab:hover {
+            color: var(--text-secondary);
+        }
+
+        .queue-tab.active {
+            color: var(--white);
+            background: rgba(var(--white-rgb), 0.08);
+        }
+
+        .queue-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .queue-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(var(--white-rgb), 0.015);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 1rem 1.15rem;
+            transition: all var(--transition-base);
+        }
+
+        .queue-item:hover {
+            background: rgba(var(--white-rgb), 0.03);
+            border-color: var(--border-medium);
+        }
+
+        .comment-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            max-width: 70%;
+        }
+
+        .comment-info {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.75rem;
+        }
+
+        .comment-author {
+            font-weight: 600;
+            color: var(--white);
+            font-family: var(--font-outfit);
+        }
+
+        .comment-time {
+            color: var(--text-muted);
+        }
+
+        .badge {
+            font-size: 0.63rem;
+            padding: 0.1rem 0.45rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .badge.flagged {
+            background: var(--fn-amber-muted);
+            color: var(--fn-amber);
+            border: 1px solid rgba(245, 158, 11, 0.15);
+        }
+
+        .badge.approved {
+            background: var(--fn-green-muted);
+            color: var(--fn-green);
+            border: 1px solid rgba(34, 197, 94, 0.15);
+        }
+
+        .badge.rejected {
+            background: var(--fn-red-muted);
+            color: var(--fn-red);
+            border: 1px solid rgba(239, 68, 68, 0.15);
+        }
+
+        .comment-text {
+            color: var(--text-secondary);
+            font-size: 0.83rem;
+            line-height: 1.4;
+        }
+        
+        .queue-item.flagged .comment-text,
+        .queue-item.flagged .comment-time,
+        .queue-item.flagged .score-lbl {
+            color: #00e676 !important;
+            text-shadow: 0 0 5px rgba(0, 230, 118, 0.4);
+        }
+
+        [data-theme="light"] .queue-item.flagged .comment-text,
+        [data-theme="light"] .queue-item.flagged .comment-time,
+        [data-theme="light"] .queue-item.flagged .score-lbl {
+            color: #000000 !important;
+            text-shadow: none;
+        }
+
+        .comment-reason {
+            font-size: 0.7rem;
+            color: var(--fn-red);
+            font-style: italic;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .comment-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-action {
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            width: 34px;
+            height: 34px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            font-size: 0.85rem;
+        }
+
+        .btn-approve {
+            color: var(--fn-green);
+            border-color: rgba(34, 197, 94, 0.15);
+        }
+        .btn-approve:hover {
+            background: var(--fn-green-muted);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .btn-reject {
+            color: var(--fn-red);
+            border-color: rgba(239, 68, 68, 0.15);
+        }
+        .btn-reject:hover {
+            background: var(--fn-red-muted);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .score-bar-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-top: 0.2rem;
+        }
+
+        .score-lbl {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            min-width: 70px;
+        }
+
+        .score-bar {
+            height: 4px;
+            background: rgba(var(--white-rgb), 0.04);
+            border-radius: 2px;
+            width: 90px;
+            overflow: hidden;
+        }
+
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+        }
+
+        /* Chart Card */
+        .chart-card {
+            padding: 1.35rem;
+            display: flex;
+            flex-direction: column;
+            height: 380px;
+        }
+
+        .chart-header {
+            margin-bottom: 1rem;
+        }
+
+        .chart-header h2 {
+            font-family: var(--font-outfit);
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+        }
+
+        .chart-header p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .chart-container-inner {
+            flex-grow: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ====== ANALYTICS SECTION ====== */
+        .pulse-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--fn-green);
+            display: inline-block;
+            animation: pulse-soft 2.5s ease-in-out infinite;
+        }
+
+        .analytics-stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        .analytics-stat-card {
+            padding: 1.35rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1.15rem;
+            transition: all var(--transition-smooth);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .analytics-stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(var(--white-rgb),0.1), transparent);
+            opacity: 0;
+            transition: opacity var(--transition-base);
+        }
+
+        .analytics-stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--border-hover);
+        }
+
+        .analytics-stat-card:hover::before {
+            opacity: 1;
+        }
+
+        .analytics-stat-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .analytics-stat-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.1rem;
+        }
+
+        .analytics-stat-label {
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+        }
+
+        .analytics-stat-value {
+            font-family: var(--font-outfit);
+            font-size: 1.85rem;
+            font-weight: 700;
+            color: var(--white);
+            line-height: 1.15;
+            transition: color var(--transition-base);
+        }
+
+        .analytics-stat-value.updated {
+            color: var(--text-secondary);
+        }
+
+        .analytics-stat-sub {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+        }
+
+        .analytics-charts-grid {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr;
+            gap: 1.25rem;
+        }
+
+        .analytics-chart-card {
+            padding: 1.35rem;
+            display: flex;
+            flex-direction: column;
+            height: 400px;
+            transition: border-color var(--transition-base);
+        }
+
+        .analytics-chart-card:hover {
+            border-color: var(--border-medium);
+        }
+
+        .analytics-chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.85rem;
+        }
+
+        .analytics-chart-header h2 {
+            font-family: var(--font-outfit);
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.15rem;
+        }
+
+        .analytics-chart-header p {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        .analytics-chart-legend {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .legend-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .analytics-chart-body {
+            flex-grow: 1;
+            position: relative;
+            min-height: 0;
+        }
+
+        .analytics-chart-body canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* ====== Toast Notification ====== */
+        .toast-notification {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            background: #ffffff;
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            border-radius: var(--radius-lg);
+            padding: 0.85rem 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            box-shadow: 0 12px 40px rgba(var(--black-rgb), 0.6);
+            z-index: 1000;
+            transform: translateY(150%);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            backdrop-filter: blur(16px);
+            max-width: 420px;
+        }
+
+        .toast-notification.active {
+            transform: translateY(0);
+        }
+
+        .toast-icon {
+            font-size: 1.5rem;
+            color: var(--fn-red);
+        }
+
+        .toast-content h4 {
+            font-family: var(--font-outfit);
+            font-size: 0.87rem;
+            color: #000000;
+            margin-bottom: 0.1rem;
+        }
+
+        .toast-content p {
+            font-size: 0.75rem;
+            color: #333333;
+            line-height: 1.35;
+        }
+
+        .toast-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-left: auto;
+            transition: color var(--transition-fast);
+            padding: 0.25rem;
+        }
+
+        .toast-close:hover {
+            color: var(--text-primary);
+        }
+
+        /* ====== Responsive ====== */
+        @media (max-width: 1024px) {
+            .chat-layout { grid-template-columns: 1fr; }
+            .chat-sidebar { display: none; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .dashboard-mid { grid-template-columns: 1fr; }
+            .analytics-charts-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .topnav { padding: 0 1.25rem; }
+            .main-content { padding: 1.5rem 1.25rem; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .analytics-stats-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navigation -->
+    <nav class="topnav">
+        <div class="topnav-left">
+            <a class="logo" href="index.html">
+                <div class="logo-mark">
+                    <i class="fa-solid fa-comment-dots"></i>
+                </div>
+                <span class="logo-name">Lowkey</span>
+            </a>
+            <ul class="nav-tabs">
+                <li>
+                    <div class="nav-item active" id="nav-chat" onclick="switchTab('chat')">
+                        <i class="fa-regular fa-comment-dots"></i>
+                        <span>Chat</span>
+                    </div>
+                </li>
+                <li>
+                    <div class="nav-item" id="nav-dashboard" onclick="switchTab('dashboard')">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span>Moderator</span>
+                    </div>
+                </li>
+                <li>
+                    <div class="nav-item" id="nav-analytics" onclick="switchTab('analytics')">
+                        <i class="fa-solid fa-chart-pie"></i>
+                        <span>Analytics</span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <div class="topnav-right">
+            <button id="theme-toggle" class="btn-action" style="border: none; margin-right: 0.5rem; color: var(--text-secondary);" onclick="toggleTheme()">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+            <div class="status-pill">
+                <span class="status-dot" id="system-status-dot"></span>
+                <span id="system-status-text">Connecting…</span>
+            </div>
+            <span id="system-status-info" style="display: none;">Backend: Online</span>
+        </div>
+    </nav>
+
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+        <div class="main-content">
+
+            <!-- ========== LIVE CHAT ========== -->
+            <section id="chat-section" class="view-section active">
+                <div class="view-header">
+                    <div class="view-title">
+                        <h1>Live Feed</h1>
+                        <p>Submit comments and watch AI moderation in real time.</p>
+                    </div>
+                </div>
+
+                <div class="chat-layout">
+                    <div class="chat-panel glass-card">
+                        <div class="chat-topbar">
+                            <div class="chat-topbar-left">
+                                <span class="dot"></span>
+                                <span>General Feed</span>
+                            </div>
+                            <div class="chat-topbar-right">
+                                <i class="fa-regular fa-clock"></i>
+                                <span>Live</span>
+                            </div>
+                        </div>
+
+                        <div class="chat-messages" id="chat-messages">
+                            <!-- Filled dynamically by chat.js -->
+                        </div>
+
+                        <div class="chat-input-area">
+                            <form id="comment-form" class="chat-input-form" onsubmit="handleCommentSubmit(event)">
+                                <div class="chat-input-group">
+                                    <div class="input-row">
+                                        <input type="text" id="comment-author" class="chat-input-field author-input" placeholder="Username" required maxlength="25">
+                                        <input type="text" id="comment-content" class="chat-input-field message-input" placeholder="Type a comment…" required>
+                                        <button type="submit" class="chat-send-btn" id="chat-send-btn">
+                                            <i class="fa-regular fa-paper-plane"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Sidebar -->
+                    <div class="chat-sidebar">
+                        <div class="info-card glass-card">
+                            <h3><i class="fa-solid fa-wand-magic-sparkles"></i> Try These</h3>
+                            <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.65rem; line-height: 1.4;">
+                                Test the scanner with different content types.
+                            </p>
+                            <ul class="rules-list">
+                                <li><i class="fa-solid fa-circle"></i> <span><strong>Insults</strong> — idiot, stupid, loser</span></li>
+                                <li><i class="fa-solid fa-circle"></i> <span><strong>Profanity</strong> — explicit language</span></li>
+                                <li><i class="fa-solid fa-circle"></i> <span><strong>Spam</strong> — free money, click here</span></li>
+                            </ul>
+                        </div>
+                        <div class="info-card glass-card">
+                            <h3><i class="fa-solid fa-circle-info"></i> How It Works</h3>
+                            <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.45;">
+                                Every comment is scored by the AI backend. Below <strong style="color: var(--text-secondary);">80% toxicity</strong> → posted publicly. Above → held for moderator review.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== MODERATOR PANEL ========== -->
+            <section id="dashboard-section" class="view-section">
+                <div class="view-header">
+                    <div class="view-title">
+                        <h1>Moderation Center</h1>
+                        <p>Track content health and action flagged comments.</p>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card glass-card">
+                        <span class="stat-title">Total Comments</span>
+                        <span class="stat-value" id="stat-total">0</span>
+                        <div class="stat-trend">
+                            <i class="fa-solid fa-arrow-trend-up"></i>
+                            <span>Lifetime</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-card">
+                        <span class="stat-title">Approved</span>
+                        <span class="stat-value" id="stat-approved" style="color: var(--fn-green);">0</span>
+                        <div class="stat-trend trend-up">
+                            <i class="fa-solid fa-check"></i>
+                            <span>On feed</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-card">
+                        <span class="stat-title">Pending</span>
+                        <span class="stat-value" id="stat-flagged" style="color: var(--fn-amber);">0</span>
+                        <div class="stat-trend" style="color: var(--fn-amber);">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <span>Awaiting</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-card">
+                        <span class="stat-title">Avg Toxicity</span>
+                        <span class="stat-value" id="stat-avg-toxicity">0%</span>
+                        <div class="stat-trend">
+                            <i class="fa-solid fa-gauge-high"></i>
+                            <span>Index</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-mid">
+                    <div class="queue-card glass-card">
+                        <div class="queue-header">
+                            <h2>Comments Queue</h2>
+                            <div class="queue-tabs">
+                                <button class="queue-tab active" onclick="filterQueue('all')">All</button>
+                                <button class="queue-tab" onclick="filterQueue('flagged')">Flagged</button>
+                                <button class="queue-tab" onclick="filterQueue('approved')">Approved</button>
+                                <button class="queue-tab" onclick="filterQueue('rejected')">Rejected</button>
+                            </div>
+                        </div>
+                        <div class="queue-list" id="queue-list">
+                            <!-- Populated dynamically by dashboard.js -->
+                        </div>
+                    </div>
+
+                    <div class="chart-card glass-card">
+                        <div class="chart-header">
+                            <h2>Breakdown</h2>
+                            <p>Comment status distribution.</p>
+                        </div>
+                        <div class="chart-container-inner">
+                            <canvas id="toxicityChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== ANALYTICS ========== -->
+            <section id="analytics-section" class="view-section">
+                <div class="view-header">
+                    <div class="view-title">
+                        <h1>Analytics</h1>
+                        <p>Live metrics — auto-refreshes every 5 seconds.</p>
+                    </div>
+                    <div id="analytics-pulse" style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; color: var(--text-muted);">
+                        <span class="pulse-dot"></span>
+                        <span>Live</span>
+                    </div>
+                </div>
+
+                <div class="analytics-stats-row">
+                    <div class="analytics-stat-card glass-card" id="analytics-card-total">
+                        <div class="analytics-stat-icon" style="background: rgba(var(--white-rgb),0.08); color: var(--white);">
+                            <i class="fa-solid fa-comments"></i>
+                        </div>
+                        <div class="analytics-stat-info">
+                            <span class="analytics-stat-label">Total Messages</span>
+                            <span class="analytics-stat-value" id="analytics-total">—</span>
+                            <span class="analytics-stat-sub" id="analytics-total-sub">Today</span>
+                        </div>
+                    </div>
+                    <div class="analytics-stat-card glass-card" id="analytics-card-flagged">
+                        <div class="analytics-stat-icon" style="background: var(--fn-red-muted); color: var(--fn-red);">
+                            <i class="fa-solid fa-flag"></i>
+                        </div>
+                        <div class="analytics-stat-info">
+                            <span class="analytics-stat-label">Flagged</span>
+                            <span class="analytics-stat-value" id="analytics-flagged">—</span>
+                            <span class="analytics-stat-sub" id="analytics-flagged-pct">0% of total</span>
+                        </div>
+                    </div>
+                    <div class="analytics-stat-card glass-card" id="analytics-card-avg">
+                        <div class="analytics-stat-icon" style="background: var(--fn-amber-muted); color: var(--fn-amber);">
+                            <i class="fa-solid fa-gauge-high"></i>
+                        </div>
+                        <div class="analytics-stat-info">
+                            <span class="analytics-stat-label">Avg Toxicity</span>
+                            <span class="analytics-stat-value" id="analytics-avg-tox">—</span>
+                            <span class="analytics-stat-sub">Across all messages</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="analytics-charts-grid">
+                    <div class="analytics-chart-card glass-card">
+                        <div class="analytics-chart-header">
+                            <div>
+                                <h2>Toxicity Trend</h2>
+                                <p>Last 50 messages — score over time</p>
+                            </div>
+                            <div class="analytics-chart-legend">
+                                <span class="legend-dot" style="background: var(--white);"></span> Score
+                                <span class="legend-dot" style="background: rgba(239,68,68,0.3); margin-left: 0.6rem;"></span> Threshold
+                            </div>
+                        </div>
+                        <div class="analytics-chart-body">
+                            <canvas id="toxicityLineChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="analytics-chart-card glass-card">
+                        <div class="analytics-chart-header">
+                            <div>
+                                <h2>Category Breakdown</h2>
+                                <p>Counts by flag category</p>
+                            </div>
+                        </div>
+                        <div class="analytics-chart-body">
+                            <canvas id="categoryBarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <!-- Flagged Toast -->
+    <div class="toast-notification" id="flagged-toast">
+        <div class="toast-icon">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div class="toast-content">
+            <h4>Comment Flagged</h4>
+            <p id="toast-message-text">Held for moderator review due to content filters.</p>
+        </div>
+        <button class="toast-close" onclick="closeToast()">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+
+    <!-- UI Logic Controller -->
+    <script>
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            
+            const icon = document.querySelector('#theme-toggle i');
+            if (icon) {
+                icon.className = newTheme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+            }
+            
+            // Re-render chart if function exists
+            if (typeof updateChartColors === 'function') updateChartColors();
+        }
+
+        // Initialize theme icon based on saved theme
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentSavedTheme = localStorage.getItem('theme') || 'dark';
+            const icon = document.querySelector('#theme-toggle i');
+            if (icon) {
+                icon.className = currentSavedTheme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+            }
+        });
+
+        function switchTab(tabName) {
+            if (!document.startViewTransition) {
+                updateTabDOM(tabName);
+                return;
+            }
+            document.startViewTransition(() => updateTabDOM(tabName));
+        }
+
+        function updateTabDOM(tabName) {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.getElementById('nav-' + tabName).classList.add('active');
+
+            document.querySelectorAll('.view-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(tabName + '-section').classList.add('active');
+
+            if (tabName === 'chat') {
+                if (typeof loadChatComments === 'function') loadChatComments();
+            } else if (tabName === 'dashboard') {
+                if (typeof loadDashboard === 'function') loadDashboard();
+            } else if (tabName === 'analytics') {
+                if (typeof startAnalyticsPolling === 'function') startAnalyticsPolling();
+            }
+        }
+
+        function showToast(reason, score) {
+            const toast = document.getElementById('flagged-toast');
+            const toastMsg = document.getElementById('toast-message-text');
+            toastMsg.innerHTML = `Held for review (Score: <strong>${Math.round(score * 100)}%</strong>). Reason: <strong>${reason || 'Rule Violation'}</strong>`;
+            toast.classList.add('active');
+            setTimeout(() => { closeToast(); }, 6000);
+        }
+
+        function closeToast() {
+            document.getElementById('flagged-toast').classList.remove('active');
+        }
+    </script>
+
+    <!-- Link modules -->
+    <script src="chat.js"></script>
+    <script src="dashboard.js"></script>
+    <script src="analytics.js"></script>
+</body>
+</html>
